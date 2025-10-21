@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { loadNotes, saveNotes } from './storage';
 
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import {
   SortableContext,
   useSortable,
@@ -11,118 +10,103 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-export default function App() {
-  const [notes, setNotes] = useState<string[]>([]);
-  const [text, setText] = useState<string>('');
-  const [showInput, setShowInput] = useState<boolean>(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+type Note = { id: string; text: string };
+
+export default function App() {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor) // mouse/touch only; we'll handle keyboard ourselves
+  );
 
   useEffect(() => setNotes(loadNotes()), []);
   useEffect(() => saveNotes(notes), [notes]);
   useEffect(() => {
-    if (showInput && textareaRef.current) {
-      // Give React a tick to finish rendering before focusing
-      setTimeout(() => textareaRef.current?.focus(), 0);
+    function onGlobalKeyDown(e: KeyboardEvent) {
+      const ae = document.activeElement as HTMLElement | null;
+      const inTextarea = ae?.tagName === 'TEXTAREA';
+
+      const plus = e.key === '+' || (e.key === '=' && e.shiftKey);
+      if (!inTextarea && plus) {
+        e.preventDefault();
+        handleAddNote();
+      }
     }
-  }, [showInput]);
+    window.addEventListener('keydown', onGlobalKeyDown);
+    return () => window.removeEventListener('keydown', onGlobalKeyDown);
+  }, []);
 
-  function addNote() {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    setNotes([text, ...notes]); // keep newlines
-    setText('');
-    setShowInput(false);
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+  function handleAddNote() {
+    const newNote: Note = { id: crypto.randomUUID(), text: '' };
+    setNotes((prev) => [newNote, ...prev]);
+    setEditingId(newNote.id);
+    setEditText('');
   }
 
-  function removeNote(i: number) {
-    setNotes(notes.filter((_, idx) => idx !== i));
+  function bumpNote(id: string, delta: number) {
+    setNotes((prev) => {
+      const i = prev.findIndex((n) => n.id === id);
+      if (i === -1) return prev;
+      const j = Math.max(0, Math.min(prev.length - 1, i + delta));
+      if (i === j) return prev;
+      return arrayMove(prev, i, j);
+    });
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      addNote();
+  function handleSave(id: string) {
+    const trimmed = editText.trim();
+    if (!trimmed) {
+      setNotes((prev) => prev.filter((n) => n.id !== id));
+    } else {
+      setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, text: editText } : n)));
     }
+    setEditingId(null);
   }
 
-  function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
-    setText(e.target.value);
-    autoResize();
-  }
-
-  function autoResize() {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
+  function removeNote(id: string) {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
   }
 
   return (
     <div className="app-container">
-      {/* top button */}
       <div className="top-bar">
-        {!showInput && (
-          <button className="btn primary subtle" onClick={() => setShowInput(true)}>
-            + Add Note
-          </button>
-        )}
+        <button className="btn primary subtle" onClick={handleAddNote}>
+          + Add Note
+        </button>
       </div>
 
-      {/* editor area */}
-      {showInput && (
-        <div className="add-note-area">
-          <textarea
-            ref={textareaRef}
-            placeholder="Add note..."
-            value={text}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            rows={7}
-            className="note-input"
-          />
-          <div className="button-row">
-            <button className="btn secondary" onClick={() => setShowInput(false)}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* stack of notes */}
-      {/* stack of notes with drag-and-drop */}
       <DndContext
-        sensors={useSensors(useSensor(PointerSensor))}
+        sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={(event) => {
           const { active, over } = event;
           if (!over || active.id === over.id) return;
-          const oldIndex = Number(active.id);
-          const newIndex = Number(over.id);
-          setNotes((notes) => arrayMove(notes, oldIndex, newIndex));
+
+          const oldIndex = notes.findIndex((n) => n.id === active.id);
+          const newIndex = notes.findIndex((n) => n.id === over.id);
+          setNotes((items) => arrayMove(items, oldIndex, newIndex));
         }}
       >
-        <SortableContext
-          items={notes.map((_, i) => i.toString())}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={notes.map((n) => n.id)} strategy={verticalListSortingStrategy}>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {notes.map((note, i) => (
+            {notes.map((note) => (
               <SortableNote
-                key={i}
-                id={i.toString()}
-                index={i}
+                key={note.id}
+                id={note.id}
                 note={note}
-                editingIndex={editingIndex}
+                editingId={editingId}
                 editText={editText}
                 setEditText={setEditText}
-                setEditingIndex={setEditingIndex}
-                setNotes={setNotes}
-                notes={notes}
+                setEditingId={setEditingId}
+                handleSave={handleSave}
                 removeNote={removeNote}
+                notes={notes}
+                setNotes={setNotes}
+                bumpNote={bumpNote}
               />
             ))}
           </ul>
@@ -134,68 +118,152 @@ export default function App() {
 
 type SortableNoteProps = {
   id: string;
-  index: number;
-  note: string;
-  editingIndex: number | null;
+  note: Note;
+  editingId: string | null;
   editText: string;
   setEditText: (t: string) => void;
-  setEditingIndex: (i: number | null) => void;
-  setNotes: React.Dispatch<React.SetStateAction<string[]>>;
-  notes: string[];
-  removeNote: (i: number) => void;
+  setEditingId: (i: string | null) => void;
+  handleSave: (id: string) => void;
+  removeNote: (id: string) => void;
+  bumpNote: (id: string, delta: number) => void;
+  notes: Note[];
+  setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
 };
 
 function SortableNote({
   id,
-  index,
   note,
-  editingIndex,
+  editingId,
   editText,
   setEditText,
-  setEditingIndex,
-  setNotes,
-  notes,
+  setEditingId,
+  handleSave,
   removeNote,
+  bumpNote,
 }: SortableNoteProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const { listeners, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
+
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  const isEditing = editingId === id;
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const displayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    }
+  }, [isEditing]);
+
+  // restore focus to the note row
+  const focusDisplay = () => requestAnimationFrame(() => displayRef.current?.focus());
 
   return (
-    <li ref={setNodeRef} style={style} className="task-card" {...attributes} {...listeners}>
-      {editingIndex === index ? (
+    <li ref={setNodeRef} style={style} className="task-card" tabIndex={-1} role="presentation">
+      {/* Drag handle: not tabbable */}
+      <div
+        className="drag-handle"
+        {...listeners}
+        tabIndex={-1}
+        role="presentation"
+        aria-hidden="true"
+      />
+
+      {isEditing ? (
         <textarea
+          ref={textareaRef}
           className="note-input small"
           value={editText}
           onChange={(e) => setEditText(e.target.value)}
+          onBlur={() => {
+            if (editText.trim() === '' && note.text.trim() === '') {
+              removeNote(id);
+            } else if (editText !== note.text) {
+              handleSave(id);
+            } else {
+              setEditingId(null);
+            }
+            focusDisplay();
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              const updated = [...notes];
-              updated[index] = editText;
-              setNotes(updated);
-              setEditingIndex(null);
+              handleSave(id);
+              focusDisplay();
             } else if (e.key === 'Escape') {
-              setEditingIndex(null);
+              if (note.text.trim() === '') removeNote(id);
+              setEditingId(null);
+              focusDisplay();
             }
           }}
           rows={Math.min(8, editText.split('\n').length + 1)}
-          autoFocus
         />
       ) : (
         <div
+          ref={displayRef}
           className="note-display"
-          onClick={() => {
-            setEditingIndex(index);
-            setEditText(note);
+          tabIndex={0}
+          role="button"
+          onClick={(e) => {
+            const range = document.caretRangeFromPoint?.(e.clientX, e.clientY);
+            const offset = range?.startOffset ?? note.text.length;
+            setEditingId(id);
+            setEditText(note.text);
+            requestAnimationFrame(() => {
+              const ta = textareaRef.current;
+              if (ta) {
+                ta.focus();
+                ta.setSelectionRange(offset, offset);
+              }
+            });
+          }}
+          onKeyDown={(e) => {
+            // Enter/Space -> edit
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setEditingId(id);
+              setEditText(note.text);
+              requestAnimationFrame(() => {
+                const ta = textareaRef.current;
+                if (ta) {
+                  const end = ta.value.length;
+                  ta.focus();
+                  ta.setSelectionRange(end, end);
+                }
+              });
+              return;
+            }
+
+            // Shift + ArrowUp/ArrowDown -> move
+            if (e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+              e.preventDefault();
+              bumpNote(id, e.key === 'ArrowUp' ? -1 : +1);
+              // keep focus on the same (moved) note
+              requestAnimationFrame(() => e.currentTarget.focus());
+              return;
+            }
+
+            // Backspace/Delete -> remove
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+              e.preventDefault();
+              removeNote(id);
+              return;
+            }
           }}
         >
-          <pre className="note-text">{note}</pre>
+          <pre className="note-text">{note.text}</pre>
         </div>
       )}
-      <div className="delete-zone" onClick={() => removeNote(index)}>
+
+      {/* Delete strip: click-only */}
+      <div
+        className="delete-zone"
+        tabIndex={-1}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => removeNote(id)}
+      >
         ✕
       </div>
     </li>

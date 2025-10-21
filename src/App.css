@@ -1,4 +1,7 @@
 /* src/styles/app.css */
+.app-container {
+  outline: 2px solid #d8c9a9 !important; /* #b0b7c3 */
+}
 
 body {
   font-family: system-ui, sans-serif;
@@ -9,7 +12,8 @@ body {
 }
 
 .app-container {
-  width: 360px;
+  width: 90%; /* fluid width relative to window */
+  max-width: 800px; /* cap so it doesn’t get huge */
   margin: 2rem auto;
   background: #fff;
   border-radius: 12px;
@@ -17,6 +21,7 @@ body {
   padding: 16px;
   display: flex;
   flex-direction: column;
+  transition: width 0.3s ease;
 }
 
 .top-bar {
@@ -92,6 +97,16 @@ body {
     transform 0.1s ease;
 }
 
+.drag-handle {
+  width: 12px;
+  cursor: grab;
+  background: #f0f0f0;
+  box-shadow: inset -1px 0 0 #e3e3e3;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .task-card:hover {
   transform: scale(1.01);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
@@ -162,4 +177,27 @@ textarea:focus {
 }
 .note-display:hover {
   background: #f7f9ff;
+}
+
+/* Only the note body shows a focus ring */
+.note-display:focus {
+  outline: 2px solid #66aaff;
+  outline-offset: 3px;
+  background-color: #f5faff;
+}
+
+.drag-handle:focus,
+.task-card:focus {
+  outline: none;
+}
+
+note-display:focus {
+  outline: 2px solid #66aaff;
+  outline-offset: 3px;
+  background-color: #f5faff;
+}
+.drag-handle:focus,
+.task-card:focus,
+.delete-zone:focus {
+  outline: none;
 }
