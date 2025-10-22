@@ -16,7 +16,7 @@ body {
   max-width: 800px; /* cap so it doesn’t get huge */
   margin: 2rem auto;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 16px;
   display: flex;
@@ -88,8 +88,8 @@ body {
   display: flex;
   align-items: stretch;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  margin-top: 8px;
+  border-radius: 6px;
+  margin-top: 6px;
   background: #fff;
   overflow: hidden; /* keeps delete strip aligned */
   transition:

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { loadNotes, saveNotes } from './storage';
+import { loadNotes, saveNotes, newId } from './bridge/storage';
 
 import {
   SortableContext,
@@ -11,8 +11,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-
-type Note = { id: string; text: string };
+import { Note } from './note';
 
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -23,8 +22,27 @@ export default function App() {
     useSensor(PointerSensor) // mouse/touch only; we'll handle keyboard ourselves
   );
 
-  useEffect(() => setNotes(loadNotes()), []);
-  useEffect(() => saveNotes(notes), [notes]);
+  // Avoid saving before first load finishes
+  const loadedRef = useRef(false);
+
+  // Async load on mount
+  useEffect(() => {
+    (async () => {
+      const data = await loadNotes();
+      setNotes(data);
+      loadedRef.current = true;
+    })();
+  }, []);
+
+  // Debounced save whenever notes change (after initial load)
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    const t = setTimeout(() => {
+      void saveNotes(notes);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [notes]);
+
   useEffect(() => {
     function onGlobalKeyDown(e: KeyboardEvent) {
       const ae = document.activeElement as HTMLElement | null;
@@ -41,7 +59,7 @@ export default function App() {
   }, []);
 
   function handleAddNote() {
-    const newNote: Note = { id: crypto.randomUUID(), text: '' };
+    const newNote: Note = { id: newId(), text: '' };
     setNotes((prev) => [newNote, ...prev]);
     setEditingId(newNote.id);
     setEditText('');
