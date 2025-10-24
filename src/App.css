@@ -26,8 +26,13 @@ body {
 
 .top-bar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-end; /* or space-between if you prefer */
+  gap: 0.5rem; /* adds space between buttons */
   margin-bottom: 10px;
+}
+
+.top-bar .btn {
+  margin-right: 0; /* reset any old margin */
 }
 
 .btn {
@@ -166,11 +171,16 @@ textarea:focus {
   color: #a00;
 }
 
+.note-input,
 .note-input.small {
+  width: 100%;
+  resize: none;
+  line-height: 1.4;
   font-size: 0.9rem;
   padding: 6px;
-  min-height: 40px;
+  transition: height 0.1s ease-out;
 }
+
 .note-display {
   flex: 1;
   cursor: text;
@@ -200,4 +210,13 @@ note-display:focus {
 .task-card:focus,
 .delete-zone:focus {
   outline: none;
+}
+
+.digest-list {
+  list-style: none;
+  padding: 0;
+}
+.digest-time {
+  font-weight: 600;
+  color: #555;
 }

@@ -1,10 +1,6 @@
-// src/bridge/storage.ts
 import { invoke } from '@tauri-apps/api/core'; // Tauri v2
 // If you're on Tauri v1 use: import { invoke } from '@tauri-apps/api/tauri';
-
-export type Note = { id: string; text: string };
-
-// Fall back if crypto.randomUUID is missing in some envs
+import { Note } from '../note';
 export function newId() {
   // @ts-ignore
   return (
@@ -22,4 +18,14 @@ export async function loadNotes(): Promise<Note[]> {
 
 export async function saveNotes(notes: Note[]): Promise<void> {
   await invoke('save_notes', { notes });
+}
+
+export async function addToHistory(text: string) {
+  await invoke('add_to_history', { text });
+}
+
+export type HistoryEntry = { timestamp: string; text: string };
+
+export async function loadTodayHistory(): Promise<HistoryEntry[]> {
+  return await invoke<HistoryEntry[]>('load_today_history');
 }
