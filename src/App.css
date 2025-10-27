@@ -1,6 +1,7 @@
 /* src/styles/app.css */
-.app-container {
-  outline: 2px solid #d8c9a9 !important; /* #b0b7c3 */
+:root {
+  --app-padding: 16px;
+  --topbar-gap: 0.5rem; /* 8px */
 }
 
 body {
@@ -12,13 +13,14 @@ body {
 }
 
 .app-container {
-  width: 90%; /* fluid width relative to window */
-  max-width: 800px; /* cap so it doesn’t get huge */
+  outline: 2px solid #d8c9a9 !important; /* #b0b7c3 */
+  width: 90%;
+  max-width: 800px;
   margin: 2rem auto;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 16px;
+  padding: var(--app-padding);
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
@@ -26,9 +28,10 @@ body {
 
 .top-bar {
   display: flex;
-  justify-content: flex-end; /* or space-between if you prefer */
-  gap: 0.5rem; /* adds space between buttons */
-  margin-bottom: 10px;
+  justify-content: flex-end;
+  gap: var(--topbar-gap);
+  margin-bottom: 1.25rem;
+  margin-right: calc(-1 * (var(--app-padding) + var(--topbar-gap) / 2));
 }
 
 /* --- Normalize all top-bar buttons and date picker --- */
@@ -147,14 +150,20 @@ body {
 .task-card {
   display: flex;
   align-items: stretch;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   border-radius: 6px;
   margin-top: 6px;
   background: #fff;
   overflow: hidden; /* keeps delete strip aligned */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   transition:
     box-shadow 0.15s ease,
     transform 0.1s ease;
+}
+
+.task-card:hover {
+  transform: scale(1.005);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .drag-handle {
