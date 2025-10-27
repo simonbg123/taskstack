@@ -6,7 +6,7 @@ import {
   newId,
   addToHistory,
   HistoryEntry,
-  loadTodayHistory,
+  loadHistory,
 } from './bridge/storage';
 import {
   SortableContext,
@@ -24,9 +24,8 @@ export default function App() {
   const [editText, setEditText] = useState<string>('');
   const [showDigest, setShowDigest] = useState(false);
   const [digest, setDigest] = useState<HistoryEntry[]>([]);
-
+  const [digestDate, setDigestDate] = useState<Date | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null); // ✅ track focus
-  const sensors = useSensors(useSensor(PointerSensor));
   const loadedRef = useRef(false);
 
   // ----------------------------
@@ -85,7 +84,7 @@ export default function App() {
   // Global hotkey: "+" adds note
   // ----------------------------
   useEffect(() => {
-    function onGlobalKeyDown(e: KeyboardEvent) {
+    async function onGlobalKeyDown(e: KeyboardEvent) {
       const ae = document.activeElement as HTMLElement | null;
       const tag = ae?.tagName?.toLowerCase();
       const isInput =
@@ -98,11 +97,33 @@ export default function App() {
         e.preventDefault();
         handleAddNote();
       }
+
+      // Shift + V → show today's digest
+      if (e.shiftKey && e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        await loadToday();
+        return;
+      }
+
+      // Shift + Y → show yesterday's digest
+      if (e.shiftKey && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        await loadYesterday();
+        return;
+      }
+
+      // Escape → close digest view
+      if (e.key === 'Escape' && showDigest) {
+        e.preventDefault();
+        setShowDigest(false);
+        setFocusedId(null); // focus top when returning
+        return;
+      }
     }
 
     window.addEventListener('keydown', onGlobalKeyDown);
     return () => window.removeEventListener('keydown', onGlobalKeyDown);
-  }, []);
+  }, [showDigest]);
 
   // ----------------------------
   // Actions
@@ -163,10 +184,30 @@ export default function App() {
     await addToHistory(note.text);
   }
 
-  async function loadToday() {
-    const entries = await loadTodayHistory();
+  // Load history for a specific date
+  async function loadHistoryForDate(date: Date) {
+    // Format as YYYY-MM-DD
+    const dateStr = date.toLocaleDateString('en-CA');
+    const entries = await loadHistory(dateStr);
     setDigest(entries);
+    setDigestDate(date);
     setShowDigest(true);
+  }
+
+  // Convenience wrapper: today
+  async function loadToday() {
+    await loadHistoryForDate(new Date());
+  }
+
+  // Convenience wrapper: yesterday
+  async function loadYesterday() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    await loadHistoryForDate(d);
+  }
+
+  async function loadSpecificDate(date: Date) {
+    await loadHistoryForDate(date);
   }
 
   // ----------------------------
@@ -177,6 +218,7 @@ export default function App() {
       {showDigest ? (
         <DigestView
           digest={digest}
+          date={digestDate}
           onBack={() => {
             setShowDigest(false);
             setFocusedId(null); // focus top when returning
@@ -188,12 +230,12 @@ export default function App() {
           setNotes={setNotes}
           editingId={editingId}
           setEditingId={setEditingId}
-          editText={editText}
-          setEditText={setEditText}
           handleAddNote={handleAddNote}
           handleSave={handleSave}
           removeNote={removeNote}
           loadToday={loadToday}
+          loadYesterday={loadYesterday}
+          loadSpecificDate={loadSpecificDate}
           bumpNote={bumpNote}
           completeNote={completeNote}
           onRowFocus={(id) => setFocusedId(id)} // ✅ keep track when user tabs manually
@@ -208,12 +250,12 @@ interface MainNotesViewProps {
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
   editingId: string | null;
   setEditingId: (id: string | null) => void;
-  editText: string;
-  setEditText: (t: string) => void;
   handleAddNote: () => void;
   handleSave: (id: string, newText: string) => void;
   removeNote: (id: string) => void;
   loadToday: () => void;
+  loadYesterday: () => void;
+  loadSpecificDate: (date: Date) => void;
   bumpNote: (id: string, delta: number) => void;
   completeNote: (id: string) => void;
   onRowFocus: (id: string) => void;
@@ -224,17 +266,56 @@ function MainNotesView({
   setNotes,
   editingId,
   setEditingId,
-  editText,
-  setEditText,
   handleAddNote,
   handleSave,
   removeNote,
   loadToday,
+  loadYesterday,
+  loadSpecificDate,
   bumpNote,
   completeNote,
   onRowFocus,
 }: MainNotesViewProps) {
   const sensors = useSensors(useSensor(PointerSensor));
+  const [showPicker, setShowPicker] = useState(false);
+  const pickerRef = useRef<HTMLInputElement>(null);
+
+  // --- global shortcut: Shift+D → toggle picker ---
+  useEffect(() => {
+    function onGlobalKeyDown(e: KeyboardEvent) {
+      const ae = document.activeElement as HTMLElement | null;
+      const tag = ae?.tagName?.toLowerCase();
+      const isInput =
+        tag === 'textarea' || tag === 'input' || ae?.getAttribute('contenteditable') === 'true';
+      if (isInput) return;
+
+      if (e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setShowPicker((prev) => !prev);
+      }
+    }
+
+    window.addEventListener('keydown', onGlobalKeyDown);
+    return () => window.removeEventListener('keydown', onGlobalKeyDown);
+  }, []);
+
+  // focus + preload today when the picker opens
+  useEffect(() => {
+    if (showPicker) {
+      requestAnimationFrame(() => pickerRef.current?.focus());
+    }
+  }, [showPicker]);
+
+  function commitDate(val: string) {
+    if (!val) {
+      setShowPicker(false);
+      return;
+    }
+    const [year, month, day] = val.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    loadSpecificDate(localDate);
+    setShowPicker(false);
+  }
 
   return (
     <>
@@ -249,6 +330,33 @@ function MainNotesView({
         <button className="btn secondary subtle" onClick={loadToday}>
           View Today
         </button>
+        <button className="btn secondary subtle" onClick={loadYesterday}>
+          View Yesterday
+        </button>
+        <div className="date-picker-slot">
+          {!showPicker ? (
+            <button className="btn secondary subtle" onClick={() => setShowPicker(true)}>
+              View by Date
+            </button>
+          ) : (
+            <input
+              ref={pickerRef}
+              type="date"
+              className="date-picker"
+              onChange={(e) => commitDate(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  commitDate(e.currentTarget.value);
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setShowPicker(false);
+                }
+              }}
+              onBlur={() => setShowPicker(false)}
+            />
+          )}
+        </div>
       </div>
 
       <DndContext
@@ -449,11 +557,16 @@ function SortableNote({
 
 function DigestView({
   digest,
+  date,
   onBack,
 }: {
   digest: { timestamp: string; text: string }[];
+  date: Date | null;
   onBack: () => void;
 }) {
+  const titleDate = date
+    ? date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
+    : '—';
   return (
     <>
       <div className="top-bar">
@@ -461,7 +574,7 @@ function DigestView({
           ← Back
         </button>
       </div>
-      <h2 style={{ marginBottom: '1rem' }}>Today’s Completed Tasks</h2>
+      <h2 style={{ marginBottom: '1rem' }}>Completed Tasks – {titleDate}</h2>
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {digest.map((d, i) => (
           <li key={i} style={{ marginBottom: '0.5rem' }}>

@@ -31,8 +31,63 @@ body {
   margin-bottom: 10px;
 }
 
-.top-bar .btn {
-  margin-right: 0; /* reset any old margin */
+/* --- Normalize all top-bar buttons and date picker --- */
+.top-bar .btn,
+.top-bar .date-picker {
+  font-size: 0.85rem;
+  height: 32px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+/* Reserve fixed slot so toggling doesn’t shift layout */
+.date-picker-slot {
+  width: 130px;
+  height: 32px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Match the look of .btn.secondary for the picker */
+.date-picker {
+  width: 100%;
+  height: 100%;
+  font-size: inherit;
+  border: 1px solid #ccc;
+  background: #e0e0e0;
+  color: #333;
+  border-radius: inherit;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.date-picker:hover {
+  background: #d0d0d0;
+  border-color: #bbb;
+}
+
+.date-picker::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+.date-picker {
+  opacity: 1;
+  animation: fadeIn 0.15s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .btn {
@@ -179,6 +234,10 @@ textarea:focus {
   font-size: 0.9rem;
   padding: 6px;
   transition: height 0.1s ease-out;
+}
+
+input[type='date'] {
+  transition: opacity 0.15s ease;
 }
 
 .note-display {

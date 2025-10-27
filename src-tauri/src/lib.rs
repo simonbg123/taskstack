@@ -41,20 +41,18 @@ fn history_file_path(app: &tauri::AppHandle) -> PathBuf {
 }
 
 #[tauri::command]
-fn load_today_history(app: tauri::AppHandle) -> Result<Vec<HistoryEntry>, String> {
-    // Load all entries
-    let file_path = history_file_path(&app);
-    let json = fs::read_to_string(&file_path).unwrap_or_else(|_| "[]".to_string());
-    let entries: Vec<HistoryEntry> = serde_json::from_str(&json).unwrap_or_default();
+fn load_history(app: tauri::AppHandle, date: Option<String>) -> Result<Vec<HistoryEntry>, String> {
+    let entries: Vec<HistoryEntry> = load_json(&history_file_path(&app)).unwrap_or_default();
 
-    // Filter only today's entries
-    let today = Local::now().format("%Y-%m-%d").to_string();
-    let filtered: Vec<HistoryEntry> = entries
-        .into_iter()
-        .filter(|e| e.timestamp.starts_with(&today))
-        .collect();
-
-    Ok(filtered)
+    if let Some(date_str) = date {
+        let filtered: Vec<HistoryEntry> = entries
+            .into_iter()
+            .filter(|e| e.timestamp.starts_with(&date_str))
+            .collect();
+        Ok(filtered)
+    } else {
+        Ok(entries)
+    }
 }
 
 #[tauri::command]
@@ -111,7 +109,7 @@ pub fn run() {
             load_notes,
             save_notes,
             add_to_history,
-            load_today_history
+            load_history
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

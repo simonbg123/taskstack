@@ -26,6 +26,11 @@ export async function addToHistory(text: string) {
 
 export type HistoryEntry = { timestamp: string; text: string };
 
-export async function loadTodayHistory(): Promise<HistoryEntry[]> {
-  return await invoke<HistoryEntry[]>('load_today_history');
+export async function loadHistory(dateStr?: string): Promise<HistoryEntry[]> {
+  try {
+    return await invoke<HistoryEntry[]>('load_history', { date: dateStr });
+  } catch (err) {
+    console.error('Failed to load history:', err);
+    return [];
+  }
 }
