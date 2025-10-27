@@ -507,9 +507,21 @@ function SortableNote({
             }
 
             // Enter/Space -> edit
+            // Enter/Space -> edit
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               setEditingId(id);
+
+              // after textarea is mounted, move caret to end
+              requestAnimationFrame(() => {
+                const ta = document.querySelector<HTMLTextAreaElement>('textarea.note-input');
+                if (ta) {
+                  const end = ta.value.length;
+                  ta.focus();
+                  ta.setSelectionRange(end, end);
+                }
+              });
+
               return;
             }
 
@@ -585,7 +597,16 @@ function DigestView({
               })}
             </strong>
             {' – '}
-            {d.text}
+            <pre
+              className="note-text"
+              style={{
+                whiteSpace: 'pre-wrap',
+                margin: 0,
+                fontFamily: 'inherit', // keep consistent look
+              }}
+            >
+              {d.text}
+            </pre>
           </li>
         ))}
       </ul>
