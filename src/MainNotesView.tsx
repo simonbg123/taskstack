@@ -124,23 +124,25 @@ export function MainNotesView({
         }}
       >
         <SortableContext items={notes.map((n) => n.id)} strategy={verticalListSortingStrategy}>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {notes.map((note) => (
-              <SortableNote
-                key={note.id}
-                id={note.id}
-                note={note}
-                editingId={editingId}
-                setEditingId={setEditingId}
-                handleSave={handleSave}
-                removeNote={removeNote}
-                bumpNote={bumpNote}
-                notes={notes}
-                completeNote={completeNote}
-                onRowFocus={onRowFocus}
-              />
-            ))}
-          </ul>
+          <div className="notes-list">
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {notes.map((note) => (
+                <SortableNote
+                  key={note.id}
+                  id={note.id}
+                  note={note}
+                  editingId={editingId}
+                  setEditingId={setEditingId}
+                  handleSave={handleSave}
+                  removeNote={removeNote}
+                  bumpNote={bumpNote}
+                  notes={notes}
+                  completeNote={completeNote}
+                  onRowFocus={onRowFocus}
+                />
+              ))}
+            </ul>
+          </div>
         </SortableContext>
       </DndContext>
     </>

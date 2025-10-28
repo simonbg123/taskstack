@@ -12,7 +12,7 @@ export function DigestView({
     : '—';
   return (
     <>
-      <div className="top-bar">
+      <div className="top-bar digest">
         <button className="btn secondary subtle" onClick={onBack}>
           ← Back
         </button>

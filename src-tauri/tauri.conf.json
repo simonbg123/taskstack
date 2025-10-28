@@ -13,8 +13,9 @@
     "windows": [
       {
         "title": "taskstack",
-        "width": 800,
-        "height": 600
+        "width": 520,
+        "height": 820,
+        "minWidth": 520
       }
     ],
     "security": {

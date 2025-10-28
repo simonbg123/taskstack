@@ -13,9 +13,10 @@ body {
 }
 
 .app-container {
-  outline: 2px solid #d8c9a9 !important; /* #b0b7c3 */
+  outline: 2px solid #d8c9a9 !important; 
   width: 90%;
   max-width: 800px;
+  height: calc(100vh - 4rem);
   margin: 2rem auto;
   background: #fff;
   border-radius: 8px;
@@ -24,7 +25,18 @@ body {
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
+  box-sizing: border-box;
 }
+
+.notes-list {
+  flex: 1;      
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+
 
 .top-bar {
   display: flex;
@@ -32,6 +44,11 @@ body {
   gap: var(--topbar-gap);
   margin-bottom: 1.25rem;
   margin-right: calc(-1 * (var(--app-padding) + var(--topbar-gap) / 2));
+}
+
+.top-bar.digest {
+  margin-right: 0;
+  justify-content: flex-end;
 }
 
 /* --- Normalize all top-bar buttons and date picker --- */
