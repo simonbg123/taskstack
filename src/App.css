@@ -41,7 +41,7 @@ body {
   justify-content: flex-end;
   gap: var(--topbar-gap);
   margin-bottom: 1.25rem;
-  margin-right: calc(-1 * (var(--app-padding) + var(--topbar-gap) / 2));
+  margin-right: calc(+0.5 * var(--topbar-gap));
 }
 
 .top-bar.digest {
