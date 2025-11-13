@@ -13,7 +13,7 @@ body {
 }
 
 .app-container {
-  outline: 2px solid #d8c9a9 !important; 
+  outline: 2px solid #d8c9a9 !important;
   width: 90%;
   max-width: 800px;
   height: calc(100vh - 4rem);
@@ -29,14 +29,12 @@ body {
 }
 
 .notes-list {
-  flex: 1;      
+  flex: 1;
   overflow-y: auto;
   padding-right: 4px;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
 }
-
-
 
 .top-bar {
   display: flex;
@@ -304,4 +302,41 @@ note-display:focus {
 .digest-time {
   font-weight: 600;
   color: #555;
+}
+
+/* --- Harmonize react-date-picker with button look --- */
+
+/* Reserve a fixed footprint so layout never shifts */
+.date-picker-slot .react-datepicker-wrapper {
+  width: 100%;
+}
+.date-picker-slot .react-datepicker__input-container {
+  width: 100%;
+}
+.date-picker-slot .react-datepicker__input-container > button {
+  width: 100%;
+}
+
+/* Keep the DatePicker present for correct popup anchoring,
+   but invisible and non-interactive. It must still occupy the slot area. */
+.date-picker-anchored .react-date-picker__wrapper {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none; /* ensure clicks go to the cover button */
+}
+
+/* Make sure the calendar shows above everything */
+.react-date-picker__calendar {
+  z-index: 9999; /* popup above drag handles etc. */
+}
+
+/* The visible, clickable button that matches your style */
+.date-picker-cover {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* inherits .btn.secondary.subtle visuals */
 }

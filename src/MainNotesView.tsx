@@ -1,8 +1,40 @@
 import { useSensors, useSensor, PointerSensor, DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef } from 'react';
 import { SortableNote } from './SortableNote';
 import { Note } from './note';
+
+import ReactDatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
+export interface MainNotesViewProps {
+  notes: Note[];
+  setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
+  editingId: string | null;
+  setEditingId: (id: string | null) => void;
+  handleAddNote: () => void;
+  handleSave: (id: string, newText: string) => void;
+  removeNote: (id: string) => void;
+  loadToday: () => void;
+  loadYesterday: () => void;
+  loadSpecificDate: (date: Date) => void;
+  bumpNote: (id: string, delta: number) => void;
+  completeNote: (id: string) => void;
+  onRowFocus: (id: string) => void;
+}
+
+/**
+ * Button used as react-datepicker's customInput.
+ * ReactDatePicker injects onClick, onKeyDown, etc. via props.
+ */
+const DateButton = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  (props, ref) => (
+    <button {...props} ref={ref} type="button" className="btn secondary subtle">
+      View by Date
+    </button>
+  )
+);
+DateButton.displayName = 'DateButton';
 
 export function MainNotesView({
   notes,
@@ -20,10 +52,19 @@ export function MainNotesView({
   onRowFocus,
 }: MainNotesViewProps) {
   const sensors = useSensors(useSensor(PointerSensor));
-  const [showPicker, setShowPicker] = useState(false);
-  const pickerRef = useRef<HTMLInputElement>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // --- global shortcut: Shift+D → toggle picker ---
+  // react-datepicker instance; use "any" to keep TS happy
+  const dpRef = useRef<any>(null);
+
+  function focusFirstNote() {
+    requestAnimationFrame(() => {
+      const first = document.querySelector<HTMLDivElement>('.note-display');
+      first?.focus();
+    });
+  }
+
+  // --- global shortcut: Shift+D → open picker ---
   useEffect(() => {
     function onGlobalKeyDown(e: KeyboardEvent) {
       const ae = document.activeElement as HTMLElement | null;
@@ -34,31 +75,15 @@ export function MainNotesView({
 
       if (e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
-        setShowPicker((prev) => !prev);
+        // Ask the datepicker to open and focus
+        dpRef.current?.setOpen(true);
+        dpRef.current?.setFocus?.();
       }
     }
 
     window.addEventListener('keydown', onGlobalKeyDown);
     return () => window.removeEventListener('keydown', onGlobalKeyDown);
   }, []);
-
-  // focus + preload today when the picker opens
-  useEffect(() => {
-    if (showPicker) {
-      requestAnimationFrame(() => pickerRef.current?.focus());
-    }
-  }, [showPicker]);
-
-  function commitDate(val: string) {
-    if (!val) {
-      setShowPicker(false);
-      return;
-    }
-    const [year, month, day] = val.split('-').map(Number);
-    const localDate = new Date(year, month - 1, day);
-    loadSpecificDate(localDate);
-    setShowPicker(false);
-  }
 
   return (
     <>
@@ -76,39 +101,26 @@ export function MainNotesView({
         <button className="btn secondary subtle" onClick={loadYesterday}>
           View Yesterday
         </button>
+
         <div className="date-picker-slot">
-          {!showPicker ? (
-            <button className="btn secondary subtle" onClick={() => setShowPicker(true)}>
-              View by Date
-            </button>
-          ) : (
-            <input
-              ref={pickerRef}
-              type="date"
-              className="date-picker"
-              onChange={(e) => commitDate(e.currentTarget.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  commitDate(e.currentTarget.value);
-                } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  setShowPicker(false);
-                  requestAnimationFrame(() => {
-                    const first = document.querySelector<HTMLDivElement>('.note-display');
-                    first?.focus();
-                  });
-                }
-              }}
-              onBlur={() => {
-                setShowPicker(false);
-                requestAnimationFrame(() => {
-                  const first = document.querySelector<HTMLDivElement>('.note-display');
-                  first?.focus();
-                });
-              }}
-            />
-          )}
+          <ReactDatePicker
+            ref={dpRef}
+            selected={selectedDate}
+            onChange={(date: Date | null) => {
+              if (date instanceof Date && !isNaN(date.getTime())) {
+                setSelectedDate(date);
+                loadSpecificDate(date);
+              }
+              focusFirstNote();
+            }}
+            onCalendarClose={() => {
+              // when closed (ESC/click outside), return focus to top task
+              focusFirstNote();
+            }}
+            customInput={<DateButton />}
+            dateFormat="yyyy-MM-dd"
+            showPopperArrow={false}
+          />
         </div>
       </div>
 
@@ -147,19 +159,4 @@ export function MainNotesView({
       </DndContext>
     </>
   );
-}
-export interface MainNotesViewProps {
-  notes: Note[];
-  setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
-  editingId: string | null;
-  setEditingId: (id: string | null) => void;
-  handleAddNote: () => void;
-  handleSave: (id: string, newText: string) => void;
-  removeNote: (id: string) => void;
-  loadToday: () => void;
-  loadYesterday: () => void;
-  loadSpecificDate: (date: Date) => void;
-  bumpNote: (id: string, delta: number) => void;
-  completeNote: (id: string) => void;
-  onRowFocus: (id: string) => void;
 }
