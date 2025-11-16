@@ -1,15 +1,16 @@
-export function DigestView({
-  digest,
-  date,
-  onBack,
-}: {
-  digest: { timestamp: string; text: string }[];
+import { DigestEntry } from './models/digestEntry';
+
+export interface DigestViewProps {
+  digest: DigestEntry[];
   date: Date | null;
   onBack: () => void;
-}) {
+}
+
+export function DigestView({ digest, date, onBack }: DigestViewProps) {
   const titleDate = date
     ? date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
     : '—';
+
   return (
     <>
       <div className="top-bar digest">
@@ -17,27 +18,18 @@ export function DigestView({
           ← Back
         </button>
       </div>
-      <h2 style={{ marginBottom: '1rem' }}>Completed Tasks – {titleDate}</h2>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
+      <h2 className="digest-title">Completed Tasks – {titleDate}</h2>
+      <ul className="digest-list">
         {digest.map((d, i) => (
-          <li key={i} style={{ marginBottom: '0.5rem' }}>
-            <strong>
+          <li key={i} className="digest-item">
+            <strong className="digest-time">
               {new Date(d.timestamp).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
               })}
             </strong>
             {' – '}
-            <pre
-              className="note-text"
-              style={{
-                whiteSpace: 'pre-wrap',
-                margin: 0,
-                fontFamily: 'inherit', // keep consistent look
-              }}
-            >
-              {d.text}
-            </pre>
+            <pre className="note-text">{d.text}</pre>
           </li>
         ))}
       </ul>

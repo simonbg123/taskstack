@@ -1,23 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
-import {
-  loadNotes,
-  saveNotes,
-  newId,
-  addToHistory,
-  HistoryEntry,
-  loadHistory,
-} from './bridge/storage';
+import { loadNotes, saveNotes, newId, addToDigest, loadDigest } from './bridge/storage';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Note } from './note';
+import { Note } from './models/note';
+import { DigestEntry } from './models/digestEntry';
 import { MainNotesView } from './MainNotesView';
 import { DigestView } from './DigestView';
+import { isTypingTarget } from './dom';
 
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showDigest, setShowDigest] = useState(false);
-  const [digest, setDigest] = useState<HistoryEntry[]>([]);
+  const [digest, setDigest] = useState<DigestEntry[]>([]);
   const [digestDate, setDigestDate] = useState<Date | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null); // ✅ track focus
   const loadedRef = useRef(false);
@@ -74,17 +69,10 @@ export default function App() {
   // ----------------------------
   // Global hotkey: "+" adds note
   // ----------------------------
-  // ----------------------------
-  // Global hotkey: "+" adds note
-  // ----------------------------
   useEffect(() => {
     async function onGlobalKeyDown(e: KeyboardEvent) {
-      const ae = document.activeElement as HTMLElement | null;
-      const tag = ae?.tagName?.toLowerCase();
-      const isInput =
-        tag === 'textarea' || tag === 'input' || ae?.getAttribute('contenteditable') === 'true';
-
-      if (isInput) return; // ignore if typing in a field
+      const ae = document.activeElement;
+      if (isTypingTarget(ae)) return;
 
       const plusPressed = e.key === '+' || (e.key === '=' && e.shiftKey);
       if (plusPressed) {
@@ -174,14 +162,14 @@ export default function App() {
       setFocusedId(next);
       return filtered;
     });
-    await addToHistory(note.text);
+    await addToDigest(note.text);
   }
 
-  // Load history for a specific date
-  async function loadHistoryForDate(date: Date) {
+  // Load digest for a specific date
+  async function loadDigestForDate(date: Date) {
     // Format as YYYY-MM-DD
     const dateStr = date.toLocaleDateString('en-CA');
-    const entries = await loadHistory(dateStr);
+    const entries = await loadDigest(dateStr);
     setDigest(entries);
     setDigestDate(date);
     setShowDigest(true);
@@ -189,18 +177,18 @@ export default function App() {
 
   // Convenience wrapper: today
   async function loadToday() {
-    await loadHistoryForDate(new Date());
+    await loadDigestForDate(new Date());
   }
 
   // Convenience wrapper: yesterday
   async function loadYesterday() {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    await loadHistoryForDate(d);
+    await loadDigestForDate(d);
   }
 
   async function loadSpecificDate(date: Date) {
-    await loadHistoryForDate(date);
+    await loadDigestForDate(date);
   }
 
   // ----------------------------

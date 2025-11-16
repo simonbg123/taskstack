@@ -1,5 +1,4 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-// src-tauri/src/main.rs
 use chrono::Local;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 

@@ -1,6 +1,8 @@
+// src/bridge/storage.ts
 import { invoke } from '@tauri-apps/api/core'; // Tauri v2
-// If you're on Tauri v1 use: import { invoke } from '@tauri-apps/api/tauri';
-import { Note } from '../note';
+import { Note } from '../models/note';
+import { DigestEntry } from '../models/digestEntry';
+
 export function newId() {
   // @ts-ignore
   return (
@@ -20,17 +22,20 @@ export async function saveNotes(notes: Note[]): Promise<void> {
   await invoke('save_notes', { notes });
 }
 
-export async function addToHistory(text: string) {
+/**
+ * UI concept: "digest"
+ * Backend concept: "history"
+ */
+export async function addToDigest(text: string): Promise<void> {
   await invoke('add_to_history', { text });
 }
 
-export type HistoryEntry = { timestamp: string; text: string };
-
-export async function loadHistory(dateStr?: string): Promise<HistoryEntry[]> {
+export async function loadDigest(dateStr?: string): Promise<DigestEntry[]> {
   try {
-    return await invoke<HistoryEntry[]>('load_history', { date: dateStr });
+    // Backend still returns "history" entries, which match DigestEntry shape
+    return await invoke<DigestEntry[]>('load_history', { date: dateStr });
   } catch (err) {
-    console.error('Failed to load history:', err);
+    console.error('Failed to load digest (history):', err);
     return [];
   }
 }

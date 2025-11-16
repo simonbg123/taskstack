@@ -2,10 +2,11 @@ import { useSensors, useSensor, PointerSensor, DndContext, closestCenter } from 
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useState, useRef, useEffect, forwardRef } from 'react';
 import { SortableNote } from './SortableNote';
-import { Note } from './note';
+import { Note } from './models/note';
 
 import ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { isTypingTarget } from './dom';
 
 export interface MainNotesViewProps {
   notes: Note[];
@@ -55,7 +56,7 @@ export function MainNotesView({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // react-datepicker instance; use "any" to keep TS happy
-  const dpRef = useRef<any>(null);
+  const dpRef = useRef<any>(null); //todo should be named datePickerRef
 
   function focusFirstNote() {
     requestAnimationFrame(() => {
@@ -67,11 +68,8 @@ export function MainNotesView({
   // --- global shortcut: Shift+D → open picker ---
   useEffect(() => {
     function onGlobalKeyDown(e: KeyboardEvent) {
-      const ae = document.activeElement as HTMLElement | null;
-      const tag = ae?.tagName?.toLowerCase();
-      const isInput =
-        tag === 'textarea' || tag === 'input' || ae?.getAttribute('contenteditable') === 'true';
-      if (isInput) return;
+      const ae = document.activeElement;
+      if (isTypingTarget(ae)) return;
 
       if (e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();
@@ -87,7 +85,7 @@ export function MainNotesView({
 
   return (
     <>
-      <div className="top-bar" style={{ gap: '8px' }}>
+      <div className="top-bar">
         <button
           className="btn primary subtle"
           onMouseDown={(e) => e.preventDefault()} // keep focus stable
@@ -137,7 +135,8 @@ export function MainNotesView({
       >
         <SortableContext items={notes.map((n) => n.id)} strategy={verticalListSortingStrategy}>
           <div className="notes-list">
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <ul>
+              {' '}
               {notes.map((note) => (
                 <SortableNote
                   key={note.id}

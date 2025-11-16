@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useState, useRef, useEffect } from 'react';
-import { Note } from './note';
+import { Note } from './models/note';
 
 export type SortableNoteProps = {
   id: string;
