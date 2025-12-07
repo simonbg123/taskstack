@@ -38,7 +38,17 @@ export function SortableNote({
   useEffect(() => {
     if (isEditing) {
       setLocalText(note.text);
-      requestAnimationFrame(() => textareaRef.current?.focus());
+
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (el) {
+          // focus textarea
+          el.focus();
+          // move caret to end
+          const end = el.value.length;
+          el.setSelectionRange(end, end);
+        }
+      });
     }
   }, [isEditing, note.text]);
 
@@ -124,17 +134,6 @@ export function SortableNote({
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               setEditingId(id);
-
-              // after textarea is mounted, move caret to end
-              requestAnimationFrame(() => {
-                const ta = document.querySelector<HTMLTextAreaElement>('textarea.note-input');
-                if (ta) {
-                  const end = ta.value.length;
-                  ta.focus();
-                  ta.setSelectionRange(end, end);
-                }
-              });
-
               return;
             }
 

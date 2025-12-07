@@ -118,6 +118,7 @@ export function MainNotesView({
             customInput={<DateButton />}
             dateFormat="yyyy-MM-dd"
             showPopperArrow={false}
+            popperPlacement="bottom-end"
           />
         </div>
       </div>
