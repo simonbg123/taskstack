@@ -4,7 +4,7 @@ mod repository;
 
 use std::fs;
 use std::path::PathBuf;
-use tauri::State;
+use tauri::{Manager, State};
 
 use repository::{HistoryEntry, Note, Repository};
 
