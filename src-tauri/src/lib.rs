@@ -1,12 +1,12 @@
 // src/lib.rs
 
-mod repository;
+pub mod repository;
 
 use std::fs;
 use std::path::PathBuf;
 use tauri::{Manager, State};
 
-use repository::{HistoryEntry, Note, Repository};
+pub use repository::{HistoryEntry, Note, Repository};
 
 // ----------------------------
 // App entrypoint used by main.rs
