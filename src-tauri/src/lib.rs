@@ -16,7 +16,7 @@ pub use repository::{HistoryEntry, Note, Repository};
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            let data_dir: PathBuf = app.path().app_data_dir().expect("app data dir unavailable");
+            let data_dir = resolve_data_dir(app);
             fs::create_dir_all(&data_dir).ok();
             app.manage(Repository::new(data_dir));
             Ok(())
@@ -29,6 +29,13 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn resolve_data_dir(app: &tauri::App) -> PathBuf {
+    if let Ok(p) = std::env::var("TASKSTACK_DATA_DIR") {
+        return PathBuf::from(p);
+    }
+    app.path().app_data_dir().expect("app data dir unavailable")
 }
 
 // ----------------------------
