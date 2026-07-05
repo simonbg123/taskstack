@@ -202,9 +202,11 @@ To test or isolate data, set:
 ## Roadmap
 
 - In-app help/menu for keyboard shortcuts
-- Aility tp edit / re-arrange the daily digest, or "unpop" a completed task back into the stack
+- Ability to edit / re-arrange the daily digest, or "unpop" a completed task back into the stack
 - Packaging improvements for native installers (DMG / AppImage)
 - E2E test suite
+- Optional cloud sync for continuity across devices — local storage stays the default; sync would be opt-in, either to your own Google Drive or to a hosted "Taskstack Cloud"
+- Prebuilt installable releases (via GitHub Releases / CI), rather than requiring a clone + build
 
 ## Recommended IDE Setup
 
