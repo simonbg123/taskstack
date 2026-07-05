@@ -46,6 +46,17 @@ export default function App() {
     else focusTop();
   }, [notes, focusedId, showDigest]);
 
+  // Always land on the top note when the OS window regains focus (e.g.
+  // switching back to the app via Cmd+Tab) — regardless of whatever note
+  // happened to be focused before the window lost focus.
+  useEffect(() => {
+    function onWindowFocus() {
+      if (!showDigest) focusTop();
+    }
+    window.addEventListener('focus', onWindowFocus);
+    return () => window.removeEventListener('focus', onWindowFocus);
+  }, [showDigest]);
+
   // ----------------------------
   // Load / save
   // ----------------------------
